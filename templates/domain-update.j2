@@ -1,0 +1,80 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <update>
+      <domain:update xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>{{ domain_name }}</domain:name>
+        {% if new_auth_info %}
+          <domain:chg>
+            <domain:authInfo>
+              <domain:pw></domain:pw>
+            </domain:authInfo>
+          </domain:chg>
+        {% else %}
+          {% if add_name_servers or (hold is defined and hold) or add_admin_id or add_technical_id %}
+            <domain:add>
+              {% if add_name_servers %}
+                <domain:ns>
+                  {% for name_server in add_name_servers %}
+                    <domain:hostAttr>
+                      <domain:hostName>{{ name_server.hostname }}</domain:hostName>
+                      {% if name_server.ipv4_address %} <domain:hostAddr ip="v4">{{ name_server.ipv4_address }}</domain:hostAddr> {% endif %}
+                      {% if name_server.ipv6_address %} <domain:hostAddr ip="v6">{{ name_server.ipv6_address }}</domain:hostAddr> {% endif %}
+                    </domain:hostAttr>
+                  {% endfor %}
+                </domain:ns>
+              {% endif %}
+              {% if hold is defined and hold %}
+                <domain:status s="clientHold" />
+              {% endif %}
+              {% if add_admin_id %} <domain:contact type="admin">{{ add_admin_id }}</domain:contact> {% endif %}
+              {% if add_technical_id %} <domain:contact type="tech">{{ add_technical_id }}</domain:contact> {% endif %}
+            </domain:add>
+          {% endif %}
+          {% if remove_name_servers or (hold is defined and not hold) or remove_admin_id or remove_technical_id %}
+            <domain:rem>
+              {% if remove_name_servers %}
+                <domain:ns>
+                  {% for name_server in remove_name_servers %}
+                    <domain:hostAttr>
+                      <domain:hostName>{{ name_server.hostname }}</domain:hostName>
+                      {% if name_server.ipv4_address %} <domain:hostAddr ip="v4">{{ name_server.ipv4_address }}</domain:hostAddr> {% endif %}
+                      {% if name_server.ipv6_address %} <domain:hostAddr ip="v6">{{ name_server.ipv6_address }}</domain:hostAddr> {% endif %}
+                    </domain:hostAttr>
+                  {% endfor %}
+                </domain:ns>
+              {% endif %}
+              {% if hold is defined and not hold %}
+                <domain:status s="clientHold" />
+              {% endif %}
+              {% if remove_admin_id %}
+                <domain:contact type="admin">{{ remove_admin_id }}</domain:contact>
+              {% elif remove_no_admin_id %}
+                <domain:contact type="admin" />
+              {% endif %}
+              {% if no_technical_id %}
+                <domain:contact type="tech">{{ remove_technical_id }}</domain:contact>
+              {% elif no_technical_id %}
+                <domain:contact type="tech" />
+              {% endif %}
+            </domain:rem>
+          {% endif %}
+        {% endif %}
+      </domain:update>
+    </update>
+    {% if secdns_keys %}
+      <extension>
+        <secDNS:update xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1">
+          {% for secdns_key in secdns_keys %}
+            <secDNS:dsData>
+              <secDNS:keyTag>{{ secdns_key.key_tag }}</secDNS:keyTag>
+              <secDNS:alg>{{ secdns_key.algorithm }}</secDNS:alg>
+              <secDNS:digestType>{{ secdns_key.digest_type }}</secDNS:digestType>
+              <secDNS:digest>{{ secdns_key.digest }}</secDNS:digest>
+            </secDNS:dsData>
+          {% endfor %}
+        </secDNS:update>
+      </extension>
+    {% endif %}
+    <clTRID>{{ action_id }}</clTRID>
+  </command>
+</epp>

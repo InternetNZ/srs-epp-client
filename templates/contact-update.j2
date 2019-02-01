@@ -1,0 +1,35 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <update>
+      <contact:update xmlns:contact="urn:ietf:params:xml:ns:contact-1.0">
+        <contact:id>{{ contact_id }}</contact:id>
+        <contact:chg>
+          {% if contact_name or contact_street1 or contact_street2 or contact_city or contact_province or contact_country or contact_postcode %}
+            <contact:postalInfo type="int">
+              {% if contact_name %} <contact:name>{{ contact_name }}</contact:name> {% endif %}
+              {% if contact_street1 or contact_street2 or contact_city or contact_province or contact_country or contact_postcode %}
+                <contact:addr>
+                  <contact:street>{{ contact_street1 }}</contact:street>
+                  {% if contact_street2 %} <contact:street>{{ contact_street2 }}</contact:street> {% endif %}
+                  <contact:city>{{ contact_city }}</contact:city>
+                  {% if contact_province %} <contact:sp>{{ contact_province }}<contact:sp> {% endif %}
+                  {% if contact_postcode %} <contact:pc>{{ contact_postcode }}</contact:pc> {% endif %}
+                  <contact:cc>{{ contact_country }}</contact:cc>
+                </contact:addr>
+              {% endif %}
+            </contact:postalInfo>
+          {% endif %}
+          {% if contact_phone_number %} <contact:voice>{{ contact_phone_number }}</contact:voice> {% endif %}
+          {% if contact_fax_number %}
+            <contact:fax>{{ contact_fax_number }}</contact:fax>
+          {% elif contact_no_fax_number %}
+            <contact:fax/>
+          {% endif %}
+          {% if contact_email_address %} <contact:email>{{ contact_email_address }}</contact:email> {% endif %}
+          {% if contact_disclose is defined %} <contact:disclose flag="{{ contact_disclose | int }}" /> {% endif %}
+        </contact:chg>
+      </contact:update>
+    </update>
+    <clTRID>{{ action_id }}</clTRID>
+  </command>
+</epp>

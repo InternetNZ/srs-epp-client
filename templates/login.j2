@@ -1,0 +1,20 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <login>
+      <clID>{{ username }}</clID>
+      <pw>{{ password }}</pw>
+      {% if new_password %} <newPW>{{ new_password }}</newPW> {% endif %}
+      <options>
+        <version>1.0</version>
+        <lang>en</lang>
+      </options>
+      <svcs>
+        <objURI>urn:ietf:params:xml:ns:domain-1.0</objURI>
+        <objURI>urn:ietf:params:xml:ns:contact-1.0</objURI>
+        <svcExtension>
+          <extURI>urn:ietf:params:xml:ns:secDNS-1.1</extURI>
+        </svcExtension>
+      </svcs>
+    </login>
+  </command>
+</epp>

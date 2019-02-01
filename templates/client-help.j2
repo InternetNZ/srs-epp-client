@@ -1,0 +1,278 @@
+{% if help %}
+sec ACTION [OPTIONS]
+
+Send EPP commands to the New Zealand Shared Registry System.
+
+Action is one of the following:
+
+  help version
+  hello login
+  contact-create contact-update contact-delete contact-info contact-check
+  domain-create domain-update domain-delete domain-info domain-check
+  domain-renew domain-transfer
+  poll poll-ack
+  send-xml
+
+Global options are
+
+  --username                       Client EPP username
+  --password                       CLient password
+  --server                         Hostname of the the EPP server
+  --port                           Port EPP server is on, defaults to 700
+  --ca-certificate                 File containing the EPP CA certificate for server
+  --certificate                    File containing the EPP client certificate
+  --key                            File containing the EPP client private key
+  --timeout SECONDS                Number of seconds to wait for a response                       
+  --new-password PASSWORD          Set new EPP client password                  
+  --dry-run                        Print out XML that would have been sent and then exit
+
+Dates are specified in the format:
+
+  DAY/MONTH/YEAR
+
+Phone and fax numbers are specified in the format:
+
+  +COUNTRY.LOCAL
+
+Environment variables that are the defaults for options are:
+
+  EPP_USERNAME                     --username
+  EPP_PASSWORD                     --password
+  EPP_SERVER                       --server
+  EPP_PORT                         --port
+  EPP_CA_CERTIFICATE               --ca-certificate
+  EPP_CERTIFICATE                  --certificate
+  EPP_KEY                          --key
+
+The 'help' action will display this message.
+
+Run 'sec help ACTION' to see which options are available for that action. The options
+shown in the example command line are required.
+
+{% elif version %}
+sec version 0.1
+
+Copyright 2019 InternetNZ Inc.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+{% elif hello %}
+Get server greeting.
+
+sec hello
+
+{% elif login %}
+Log into the server.
+
+sec login [OPTIONS]
+
+  --new-password                   Change the password for client
+
+{% elif contact_create %}
+Create a contact.
+
+sec contact-create --contact ID --name NAME --street1 TEXT --city TEXT --country --phone PHONE --email EMAIL [OPTIONS]
+
+  --contact ID                     ID of the contact
+    --name NAME                    Name of the contact
+    --email EMAIL                  Email address
+    --street1 TEXT                 First line of street address
+    --street2 TEXT                 Second line of street address
+    --city TEXT                    City name
+    --province TEXT                Province name
+    --country CODE                 ISO country code
+    --postcode TEXT                Postcode
+    --phone PHONE                  Phone number
+    --fax FAX                      Fax number
+    --disclose --undisclose        Disable or enable privacy
+
+  --action-id ID                   Unique ID for this action
+
+{% elif contact_update %}
+Update a contact.
+
+sec contact-update --contact ID [OPTIONS]
+
+  --contact ID [OPTIONS]           ID of the contact
+    --name NAME                    Name of the contact
+    --email EMAIL                  Email address
+    --street1 TEXT                 First line of street address
+    --street2 TEXT                 Second line of street address
+    --city TEXT                    City name
+    --province TEXT                Province name
+    --country CODE                 ISO country code
+    --postcode TEXT                Postcode
+    --phone PHONE                  Phone number
+    --fax FAX                      Fax number
+    --disclose --undisclose        Disable or enable privacy
+
+  --action-id ID                   Unique ID for this action
+  
+{% elif contact_delete %}
+Delete a contact.
+
+sec contact-delete --contact ID [OPTIONS]
+
+  --contact ID                     ID of the contact
+
+{% elif contact_info %}
+Get contact details.
+
+sec contact-info --contact ID [OPTIONS]
+
+  --contact ID                     ID of the contact
+
+{% elif contact_check %}
+Check if a contact exists.
+
+sec contact-check --contact ID [OPTIONS]
+
+  --contact ID                     ID of the contact
+  
+{% elif domain_create %}
+Create (register) a domain.
+
+sec domain-create --domain NAME --period NUMBER --registrant ID [OPTIONS]
+
+  --domain NAME                    Name of the domain
+  --period NUMBER                  Number of months to register domain
+
+  --registrant ID                  ID of the registrant contact
+  --admin ID                       ID of the admin contact
+  --technical ID                   ID of the technical contact
+
+  --nameserver HOSTNAME [OPTIONS]  Hostname of name server
+    --v4 ADDRESS                   IPv4 address, used only for glue records
+    --v6 ADDRESS                   IPv6 address, used only for glue records
+
+  --secdns TAG --digest TEXT --algorithm NUMBER --type NUMBER  TAG identifiying the key
+    --digest TEXT                  Hexdigest of key
+    --type NUMBER                  Digest type
+    --algorithm NUMBER             Key algorithm
+
+  --action-id ID                   Unique ID of this action
+
+{% elif domain_update %}
+Update a domain.
+
+sec domain-update --domain NAME [OPTIONS]
+
+  --domain NAME                    Name of the domain
+  --period NUMBER                  Number of months to register domain
+
+  --add --remove                   Set whether the --registrant, --admin, --technical or --namserver is being added or removed. Default is --add
+
+  --registrant ID                  ID of the registrant contact
+  --admin ID                       ID of the admin contact
+  --technical ID                   ID of the technical contact
+
+  --no-admin                       Use default admin contact
+  --no-technical                   Use default technical contact
+
+  --hold                           Remove domain from DNS
+  --unhold                         Include domain in DNS
+
+  --nameserver HOSTNAME [OPTIONS]  Hostname of name server
+    --v4 ADDRESS                   IPv4 address, used only for glue records
+    --v6 ADDRESS                   IPv6 address, used only for glue records
+
+  --secdns TAG --digest DIGEST --algorithm NUMBER --type NUMBER  TAG identifiying the key
+    --digest TEXT                  Hexdigest of key
+    --type NUMBER                  Digest type
+    --algorithm NUMBER             Key algorithm
+
+  --no-secdns                      Remove all --secdns records
+  --action-id ID                   Unique ID of this action
+
+  --new-auth                       Request new domain password.
+  --action-id ID                   Unique ID for this action
+
+{% elif domain_delete %}
+Delete (cancel) a domain.
+
+sec domain-delete --domain NAME [OPTIONS]
+
+  --domain NAME                    Name of the domain
+  --action-id ID                   Unique ID for this action
+  
+{% elif domain_info %}
+Get domain details.
+
+sec domain-info --domain NAME [OPTIONS]
+
+  --domain NAME                    Name of the domain
+  
+{% elif domain_check %}
+Check if a domain exists.
+
+sec domain-check --domain NAME [OPTIONS]
+
+  --domain NAME                    Name of the domain
+  
+{% elif domain_transfer %}
+Transfer a domain.
+
+sec domain-transfer --domain NAME --auth AUTH [OPTIONS]
+
+  --domain NAME                    Name of the domain
+  --auth PASSWORD                  Password for the domain
+  --action-id ID                   Unique ID for this action
+
+{% elif domain_renew %}
+Renew a domain.
+
+sec domain-renew --domain NAME --period NUMBER --expires DATE [OPTIONS]
+
+  --domain NAME                    Name of the domain
+  --period NUMBER                  Number of months to register domain
+  --expires DATE                   Current expiry date for domain
+  --action-id ID                   Unique ID for this action
+
+{% elif poll %}
+Get messages.
+
+sec poll
+
+{% elif poll_ack %}
+Acknowlege a message.
+
+sec poll-ack --message-id ID
+
+  --message-id ID                  ID of message being acknowleged
+  --action-id ID                   Unique ID for this action
+
+{% elif send_xml %}
+Send a raw XML request, will use stdin if no input file is specified.
+
+sec send-xml [OPTIONS]
+
+  --file FILE                      File containing the XML to send
+
+{% else %}
+Sorry, no help avilable for that action.
+
+{% endif %}

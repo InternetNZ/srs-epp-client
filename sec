@@ -1,0 +1,521 @@
+#!/usr/bin/python3
+#
+# Copyright 2018-2019 InternetNZ Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+import sys
+import os
+import re
+import uuid
+import socket
+import ssl
+import struct
+import jinja2
+from lxml import etree
+import traceback
+
+
+PARENT_DIR = os.path.dirname(sys.argv[0])
+SERVER_CERTIFICATE = 'registry/srs-root-ca.pem'
+SERVER_PORT = 700
+
+
+class ArgumentError(Exception):
+    pass
+
+
+class InternalError(Exception):
+    pass
+
+
+class GetOptions():
+    def __init__(self, arguments, program = None):
+        self.last_option = program or 'first'
+        self.arguments = arguments
+
+    def option(self, allowed = None):
+        if not len(self.arguments):
+            return None
+
+        option = self.arguments[0]
+
+        if option[0:2] != '--':
+            raise ArgumentError('Non-option \'{}\' found'.format(option))
+
+        option = option[2:]
+
+        if allowed is not None and option not in allowed:
+            return None
+
+        self.arguments.pop(0)
+        self.last_option = option
+
+        return option
+
+    def argument(self, required, pattern = None):
+        if len(self.arguments):
+            argument = self.arguments[0]
+        else:
+            argument = None
+
+        if argument is None or not len(argument) or argument[0:2] == '--':
+            if required:
+                raise ArgumentError('Option --{} requires an argument'.format(self.last_option))
+
+            return None
+
+        if pattern and not re.search(pattern, argument):
+            raise ArgumentError('Invalid --{} argument: {}'.format(self.last_option, argument))
+
+        self.arguments.pop(0)
+        
+        return argument
+
+
+def parse_arguments():
+    arguments = {}
+    mode = 'add'
+
+    getopt = GetOptions(sys.argv[1:], program = os.path.basename(sys.argv[0]))
+    action = getopt.argument(False)
+
+    if action not in ('hello', 'login', 'domain-create', 'domain-update', 'domain-delete', 'domain-info', 'domain-check', 'domain-transfer', 'domain-renew', 'contact-create', 'contact-update', 'contact-delete', 'contact-info', 'contact-check', 'poll', 'poll-ack', 'send-xml', 'help', 'version'):
+        raise ArgumentError('Invalid action, run \'{} help\' to see list of available actions'.format(sys.argv[0]))
+
+    if action in ('help', 'version'):
+        if action == 'help':
+            argument = getopt.argument(False)
+
+            if argument is not None:
+                action = re.sub(r'-', '_', argument)
+
+        return 'help', {action: True}
+
+    while True:
+        option = getopt.option()
+
+        if option is None:
+            break
+
+        # global
+        if option == 'server':
+            arguments['server_name'] = getopt.argument(True)
+        elif option == 'port':
+            arguments['server_port'] = getopt.argument(True, '(?x) ^ [0-9]+ $')
+        elif option == 'ca-certificate':
+            arguments['server_certificate'] = getopt.argument(True)
+        elif option == 'certificate':
+            arguments['client_certificate'] = getopt.argument(True)
+        elif option == 'key':
+            arguments['client_key'] = getopt.argument(True)
+        elif option == 'timeout':
+            option = int(getopt.argument(True, r'(?x) ^ [0-9]+ $'))
+        elif option == 'dry-run':
+            arguments['dry_run'] = True
+        elif option in ('add', 'remove'):
+            mode = option
+            
+        # login
+        elif option == 'username':
+            arguments['username'] = getopt.argument(True)
+        elif option == 'password':
+            arguments['password'] = getopt.argument(True)
+        elif option == 'new-password':
+            arguments['new_password'] = getopt.argument(True)
+
+        # domain
+        elif option == 'domain':
+            argument = getopt.argument(True, r'(?ix) ^ [a-z0-9āēīōū\.\-\*\?]+ $')
+
+            if re.search(r'(?ix) [āēīōū]', argument):
+                argument = str(argument.encode('idna'), 'utf-8')
+
+            arguments['domain_name'] = argument
+        elif option == 'period':
+            arguments['period'] = int(getopt.argument(True, r'(?x) ^ [0-9]+ $'))
+        elif option in ('hold', 'unhold'):
+            arguments['hold'] = option.startswith('un')
+        elif option == 'auth':
+            arguments['auth_info'] = getopt.argument(True)
+        elif option == 'new-auth':
+            arguments['new_auth_info'] = True
+        elif option == 'expires':
+            argument = getopt.argument(True)
+            match = re.search(r'(?x) (?P<day> [0-9]{1,2}) / (?P<month> [0-9]{1,2}) / (?P<year> [0-9]{4}) $', argument)
+
+            if match is None:
+                raise ArgumentError('Invalid --expires: {}'.format(argument))
+            
+            arguments['expires_on'] = '-'.join([match.group('year'), match.group('month'), match.group('day')])
+
+        # contact
+        elif option == 'contact':
+            arguments['contact_id'] = getopt.argument(True, r'(?ix) ^ [a-z0-9_\-] [0-9a-z_\-]{3,14} [a-z0-9_\-] $')
+
+            while True:
+                option = getopt.option(('name', 'email', 'street1', 'street2', 'city', 'province', 'country', 'postcode', 'phone', 'fax', 'no-fax', 'disclose', 'undisclose'))
+
+                if option is None:
+                    break;
+            
+                if option == 'name':
+                    arguments['contact_name'] = getopt.argument(True)
+                elif option == 'email':
+                    arguments['contact_email_address'] = getopt.argument(True, r'(?ix) ^ [a-z0-9\.\-\+]+ @ (?: [a-z0-9\-]+ \.)+ [a-z]+ $')
+                elif option in ('street1', 'street2', 'city', 'province', 'postcode'):
+                    address = 'contact_' + option
+                    arguments[address] = getopt.argument(True)
+                elif option == 'country':
+                    arguments['contact_country'] = getopt.argument(True, '(?ix) ^ [a-z]{2} $').upper()
+                elif option in ('phone', 'fax'):
+                    number = 'contact_' + option + '_number'
+                    argument = getopt.argument(True)
+
+                    if not re.search('(?ix) ^ (\+ [0-9]{1,3}) (\. [0-9]{1,14}) $', argument):
+                        raise ArgumentError('Invalid --{} number: {}'.format(option, argument))
+            
+                    arguments[number] = argument
+                elif option == 'no-fax':
+                    arguments['contact_no_fax'] = True
+                elif option in ('disclose', 'undisclose'):
+                    arguments['contact_disclose'] = option.startswith('un')
+
+        elif option in ('registrant', 'admin', 'technical'):
+            contact = mode + '_' + re.sub('-', '_', option) + '_id'
+            arguments[contact] = getopt.argument(True, r'(?ix) ^ [a-z0-9_\-] [0-9a-z_\-]{3,14} [a-z0-9_\-] $')
+        elif option in ('no-admin', 'no-technical'):
+            contact = re.sub('-', '_', option) + '_id'
+            arguments[contact] = True
+            
+        # name servers
+        elif option == 'nameserver':
+            name_servers = mode + '_name_servers'
+            
+            if name_servers not in arguments:
+                arguments[name_servers] = []
+
+            arguments[name_servers].append({})
+            arguments[name_servers][-1]['hostname'] = getopt.argument(True, r'(?ix) ^ [a-z0-9\.\-\*\?]+ $')
+            
+            while True:
+                option = getopt.option(('v4', 'v6'))
+
+                if option is None:
+                    break
+
+                if option == 'v4':
+                    arguments[name_servers][-1]['ipv4_address'] = getopt.argument(True, r'(?x) ^ [0-9]+ \. [0-9]+ \. [0-9]+ \. [0-9]+ $')
+                elif option == 'v6':
+                    arguments[name_servers][-1]['ipv6_address'] = getopt.argument(True, r'(?ix) ^ (?: [a-f0-9]{0,4} :){1,7} [a-f0-9]{1,4} $')
+
+        # secdns
+        elif option == 'secdns':
+            if 'secdns_keys' not in arguments:
+                arguments['secdns_keys'] = []
+
+            arguments['secdns_keys'].append({})
+            arguments['secdns_keys'][-1]['key_tag'] = int(getopt.argument(True, r'(?x) ^ [0-9]+ $'))
+
+            while True:
+                option = getopt.option(('digest', 'algorithm', 'type'))
+
+                if option is None:
+                    break
+
+                if option == 'digest':
+                    arguments['secdns_keys'][-1]['digest'] = getopt.argument(True, r'(?ix) ^ [a-f0-9]+ $').upper()
+                elif option == 'algorithm':
+                    arguments['secdns_keys'][-1]['algorithm'] = int(getopt.argument(True, r'(?x) ^ [0-9]+ $'))
+                elif option == 'hash':
+                    arguments['secdns_keys'][-1]['digest_type'] = int(getopt.argument(True, r'(?x) ^ [0-9]+ $'))
+
+        elif option == 'no-secdns':
+            arguments['no_secdns_keys'] = True
+
+        # poll
+        elif option in ('action-id', 'message-id'):
+            id = re.sub('-', '_', option)
+            arguments[id] = getopt.argument(True)
+
+        # send-xml
+        elif option == 'file':
+            arguments['file'] = getopt.argument(True)
+            
+        else:
+            raise ArgumentError('Unknown option \'{}\' found'.format(option))
+
+    return action, arguments
+
+
+def check_arguments(action, arguments):
+    if 'dry_run' not in arguments:
+        if 'server_name' not in arguments:
+            arguments['server_name'] = os.environ.get('EPP_SERVER')
+
+            if arguments['server_name'] is None:
+                raise ArgumentError('No --server specified')
+
+        if 'server_port' not in arguments:
+            arguments['server_port'] = int(os.environ.get('EPP_PORT'))
+
+            if arguments['server_port'] is None:
+                arguments['server_port'] = SERVER_PORT
+
+        if 'server_certificate' not in arguments:
+            arguments['server_certificate'] = os.environ.get('EPP_CA_CERTIFICATE')
+
+            if arguments['server_certificate'] is None:
+                arguments['server_certificate'] = PARENT_DIR + '/' + SERVER_CERTIFICATE
+            
+        if 'client_certificate' not in arguments:
+            arguments['client_certificate'] = os.environ.get('EPP_CERTIFICATE')
+
+            if arguments['client_certificate'] is None:
+                raise ArgumentError('No --certificate specified')
+
+        if 'client_key' not in arguments:
+            arguments['client_key'] = os.environ.get('EPP_KEY')
+
+            if arguments['client_key'] is None:
+                arguments['client_key'] = arguments['client_certificate']
+
+        if 'timeout' not in arguments:
+            arguments['timeout'] = 300
+    
+    if action == 'hello':
+        return
+
+    if 'username' not in arguments:
+        arguments['username'] = os.environ.get('EPP_USERNAME')
+
+        if arguments['username'] is None:
+            raise ArgumentError('No --username specified')
+
+    if 'password' not in arguments:
+        arguments['password'] = os.environ.get('EPP_PASSWORD')
+                    
+        if arguments['password'] is None:
+            raise ArgumentError('No ---password specified')
+
+    if action in ('domain-create', 'domain-update', 'domain-delete', 'domain-renew', 'domain-transfer', 'domain-info', 'domain-check'):
+        if 'domain_name' not in arguments:
+            raise ArgumentError('No --domain specified')
+
+    if action in ('domain-create', 'domain-renew') and 'period' not in arguments:
+        raise ArgumentError('No --period specified')
+
+    if action == 'domain-renew' and 'expires_on' not in arguments:
+        raise ArgumentError('No --expires specified')
+
+    if action == 'domain-transfer' and 'auth_info' not in arguments:
+        raise ArgumentError('No --auth specified')
+        
+    if action in ('contact-create', 'contact-update', 'contact-delete', 'contact-info', 'contact-check'):
+        if 'contact_id' not in arguments:
+            raise ArgumentError('No --contact specified')
+        
+    if action == 'contact-create':
+        if 'contact_name' not in arguments:
+            raise ArgumentError('No --name specified')
+
+        if 'contact_email_address' not in arguments:
+            raise ArgumentError('No --email specified')
+
+        if 'contact_phone_number' not in arguments:
+            raise ArgumentError('No --phone specified')
+
+    # require full postal if contact is being created, or postal is updated
+    if action == 'contact-create' or (action == 'contact-update' and ('contact_street1' in arguments or 'contact_street2' in arguments or 'contact_city' in arguments or 'contact_province' in arguments or 'contact_country' in arguments or 'contact_postcode' in arguments)):
+        if 'contact_street1' not in arguments:
+            raise ArgumentError('No --street1 specified')
+
+        if 'contact_city' not in arguments:
+            raise ArgumentError('No --city specified')
+
+        if 'contact_country' not in arguments:
+            raise ArgumentError('No --country specified')
+
+    if action == 'domain-transfer' and 'auth_info' not in arguments:
+        raise ArgumentError('No --auth specified')
+
+    if action == 'poll-ack' and 'message_id' not in arguments:
+        raise ArgumentError('No --message-id specified')
+
+    if action == 'send-xml' and 'dry_run' in arguments:
+        raise ArgumentError('send-xml does not support --dry-run')
+
+
+class EppClient:
+    def __init__(self, server_name, server_port, server_certificate, client_certificate, client_key, timeout):
+        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.check_hostname = True
+
+        context.load_cert_chain(client_certificate, client_key)
+        context.load_verify_locations(cafile = server_certificate)
+
+        self.socket = context.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM), server_hostname = server_name)
+        self.socket.settimeout(timeout)
+        self.socket.connect((server_name, server_port))
+
+    def __del__(self):
+        if self.socket is not None:
+            self.socket.close()
+
+    def send(self, request):
+        request = request.encode('utf-8')
+
+        self.socket.write(struct.pack('>I', len(request) + 4))
+        self.socket.write(request)
+            
+    def receive(self):
+        length = struct.unpack('>I', self.socket.read(4))[0]
+
+        if length <= 4:
+            raise InternalError('Invalid response length: {}'.format(length - 4))
+
+        response = self.socket.read(length - 4)
+        xml_document = etree.fromstring(response)
+
+        if xml_document.tag != '{urn:ietf:params:xml:ns:epp-1.0}epp':
+            raise InternalError('Root element is not <epp>: {}'.format(xml_document.tag))
+
+        return xml_document
+
+
+def main():
+    action, arguments = parse_arguments()
+
+    if action == 'help':
+        template = jinja2.Environment(loader = jinja2.FileSystemLoader(PARENT_DIR + '/templates'), trim_blocks = True).get_template('client-help.j2')
+        content = template.render(arguments)
+
+        print(content, end = '')
+        return
+
+    check_arguments(action, arguments)
+    environment = jinja2.Environment(loader = jinja2.FileSystemLoader(PARENT_DIR + '/templates'), autoescape = True)
+
+    if 'action_id' not in arguments and action in ('domain-create', 'domain-update', 'domain-delete', 'domain-transfer', 'domain-renew', 'contact-create', 'contact-update', 'contact-delete', 'poll-ack'):
+        arguments['action_id'] = uuid.uuid1()
+
+    if 'dry_run' in arguments:
+        template = environment.get_template(action + '.j2')
+        content = re.sub(r'(?x) > [ \t\r\n]+ <', '><', template.render(arguments))
+
+        xml_document = etree.fromstring(content)
+        print(str(etree.tostring(xml_document, pretty_print = True), 'utf-8'), end = '')
+
+        return
+
+    server_name = arguments['server_name']
+    server_port = arguments['server_port']
+    server_certificate = arguments['server_certificate']
+
+    client_certificate = arguments['client_certificate']
+    client_key = arguments['client_key']
+    timeout = arguments['timeout']
+
+    epp_client = EppClient(server_name, server_port, server_certificate, client_certificate, client_key, timeout);
+
+    # greeting
+    xml_document = epp_client.receive()
+
+    if xml_document.find('{urn:ietf:params:xml:ns:epp-1.0}greeting') is None:
+        raise InternalError('No <greeting> element')
+
+    if action == 'hello':
+        print(str(etree.tostring(xml_document, pretty_print = True), 'utf-8'), end = '')
+        return
+
+    # login
+    template = environment.get_template('login.j2')
+    content = re.sub(r'(?x) > [ \t\r\n]+ <', '><', template.render(arguments))
+
+    epp_client.send(content)
+    xml_document = epp_client.receive()
+
+    result = xml_document.find('{urn:ietf:params:xml:ns:epp-1.0}response/{urn:ietf:params:xml:ns:epp-1.0}result');
+    
+    if result is None:
+        raise InternalError('No <result> element in <response>')
+
+    code = int(result.get('code', 0))
+
+    if code != 1000:
+        error = result.find('{urn:ietf:params:xml:ns:epp-1.0}msg')
+        raise InternalError('Login error: {}'.format(error.text if error is not None else code))
+
+    # action
+    if action != 'login':
+        if action == 'send-xml':
+            if 'file' in arguments:
+                with open(arguments['file'], 'r') as file:
+                    content = file.read()
+            else:
+                content = sys.stdin.read()
+        else:
+            template = environment.get_template(action + '.j2')
+            content = re.sub(r'(?x) > [ \t\r\n]+ <', '><', template.render(arguments))
+
+        epp_client.send(content)
+        xml_document = epp_client.receive()
+
+    print(str(etree.tostring(xml_document, pretty_print = True), 'utf-8'), end = '')
+
+    # logout
+    template = environment.get_template('logout.j2')
+    content = re.sub(r'(?x) > [ \t\r\n]+ <', '><', template.render(arguments))
+
+    epp_client.send(content)
+    xml_document = epp_client.receive()
+
+    result = xml_document.find('{urn:ietf:params:xml:ns:epp-1.0}response/{urn:ietf:params:xml:ns:epp-1.0}result');
+    
+    if result is None:
+        raise InternalError('No <result> element in <response>')
+
+    code = int(result.get('code', 0))
+
+    if code != 1500:
+        error = result.find('{urn:ietf:params:xml:ns:epp-1.0}msg')
+        raise InternalError('Logout error: {}'.format(error.text if error is not None else code))
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (ArgumentError, InternalError) as error:
+        print(error, file = sys.stderr)
+        exit(1)
+    except Exception:
+        traceback.print_exc(file = sys.stderr)
+        exit(1)
+
+    exit(0)

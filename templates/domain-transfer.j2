@@ -1,0 +1,13 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <transfer op="request">
+      <domain:transfer xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>{{ domain_name }}</domain:name>
+        <domain:authInfo>
+          <domain:pw>{{ auth_info }}</domain:pw>
+        </domain:authInfo>
+      </domain:transfer>
+    </transfer>
+    <clTRID>{{ action_id }}</clTRID>
+  </command>
+</epp>

@@ -1,0 +1,14 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <info>
+      <domain:info xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>{{ domain_name }}</domain:name>
+        {% if auth_info %}
+          <domain:authInfo>
+            <domain:pw>{{ auth_info }}</domain:pw>
+          </domain:authInfo>
+        {% endif %}
+      </domain:info>
+    </info>
+  </command>
+</epp>
