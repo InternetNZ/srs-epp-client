@@ -169,7 +169,7 @@ sec domain-create --domain NAME --period NUMBER --registrant ID [OPTIONS]
     --v4 ADDRESS                   IPv4 address, used only for glue records
     --v6 ADDRESS                   IPv6 address, used only for glue records
 
-  --secdns TAG --digest TEXT --algorithm NUMBER --type NUMBER  TAG identifiying the key
+  --secdns TAG --digest TEXT --algorithm NUMBER --type NUMBER  TAG identifying the key
     --digest TEXT                  Hexdigest of key
     --type NUMBER                  Digest type
     --algorithm NUMBER             Key algorithm
@@ -184,7 +184,7 @@ sec domain-update --domain NAME [OPTIONS]
   --domain NAME                    Name of the domain
   --period NUMBER                  Number of months to register domain
 
-  --add --remove                   Set whether the --registrant, --admin, --technical or --namserver is being added or removed. Default is --add
+  --add --remove                   Set whether the --registrant, --admin, --technical or --nameserver is being added or removed, default is --add
 
   --registrant ID                  ID of the registrant contact
   --admin ID                       ID of the admin contact
@@ -200,7 +200,7 @@ sec domain-update --domain NAME [OPTIONS]
     --v4 ADDRESS                   IPv4 address, used only for glue records
     --v6 ADDRESS                   IPv6 address, used only for glue records
 
-  --secdns TAG --digest DIGEST --algorithm NUMBER --type NUMBER  TAG identifiying the key
+  --secdns TAG --digest DIGEST --algorithm NUMBER --type NUMBER  TAG identifying the key
     --digest TEXT                  Hexdigest of key
     --type NUMBER                  Digest type
     --algorithm NUMBER             Key algorithm
