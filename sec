@@ -281,9 +281,9 @@ def check_arguments(action, arguments):
                 raise ArgumentError('No --server specified')
 
         if 'server_port' not in arguments:
-            arguments['server_port'] = int(os.environ.get('EPP_PORT'))
+            arguments['server_port'] = int(os.environ.get('EPP_PORT', 0))
 
-            if arguments['server_port'] is None:
+            if arguments['server_port'] is 0:
                 arguments['server_port'] = SERVER_PORT
 
         if 'server_certificate' not in arguments:
