@@ -404,7 +404,7 @@ class EppClient:
         xml_document = etree.fromstring(response)
 
         if xml_document.tag != '{urn:ietf:params:xml:ns:epp-1.0}epp':
-            raise InternalError('Root element is not <epp>: {}'.format(xml_document.tag))
+            raise InternalError('XML document is not <epp>: {}'.format(xml_document.tag))
 
         return xml_document
 
