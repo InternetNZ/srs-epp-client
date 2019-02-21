@@ -159,7 +159,7 @@ def parse_arguments():
         elif option == 'period':
             arguments['period'] = int(getopt.argument(True, r'(?x) ^ [0-9]+ $'))
         elif option in ('hold', 'unhold'):
-            arguments['hold'] = option.startswith('un')
+            arguments['hold'] = not option.startswith('un')
         elif option == 'auth':
             arguments['auth_info'] = getopt.argument(True)
         elif option == 'new-auth':
