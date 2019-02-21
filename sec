@@ -124,7 +124,7 @@ def parse_arguments():
 
         # global
         if option == 'server':
-            arguments['server_name'] = getopt.argument(True)
+            arguments['server_hostname'] = getopt.argument(True)
         elif option == 'port':
             arguments['server_port'] = getopt.argument(True, '(?x) ^ [0-9]+ $')
         elif option == 'ca-certificate':
@@ -274,10 +274,10 @@ def parse_arguments():
 
 def check_arguments(action, arguments):
     if 'dry_run' not in arguments:
-        if 'server_name' not in arguments:
-            arguments['server_name'] = os.environ.get('EPP_SERVER')
+        if 'server_hostname' not in arguments:
+            arguments['server_hostname'] = os.environ.get('EPP_SERVER')
 
-            if arguments['server_name'] is None:
+            if arguments['server_hostname'] is None:
                 raise ArgumentError('No --server specified')
 
         if 'server_port' not in arguments:
@@ -371,7 +371,7 @@ def check_arguments(action, arguments):
 
 
 class EppClient:
-    def __init__(self, server_name, server_port, server_certificate, client_certificate, client_key, timeout):
+    def __init__(self, server_hostname, server_port, server_certificate, client_certificate, client_key, timeout):
         context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 
         context.verify_mode = ssl.CERT_REQUIRED
@@ -384,9 +384,9 @@ class EppClient:
         else:
             context.load_verify_locations(cafile = server_certificate)
 
-        self.socket = context.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM), server_hostname = server_name)
+        self.socket = context.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM), server_hostname = server_hostname)
         self.socket.settimeout(timeout)
-        self.socket.connect((server_name, server_port))
+        self.socket.connect((server_hostname, server_port))
 
     def __del__(self):
         if self.socket is not None:
@@ -438,7 +438,7 @@ def main():
 
         return
 
-    server_name = arguments['server_name']
+    server_hostname = arguments['server_hostname']
     server_port = arguments['server_port']
     server_certificate = arguments['server_certificate']
 
@@ -446,7 +446,7 @@ def main():
     client_key = arguments['client_key']
     timeout = arguments['timeout']
 
-    epp_client = EppClient(server_name, server_port, server_certificate, client_certificate, client_key, timeout);
+    epp_client = EppClient(server_hostname, server_port, server_certificate, client_certificate, client_key, timeout);
 
     # greeting
     xml_document = epp_client.receive()
