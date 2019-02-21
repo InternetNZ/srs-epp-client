@@ -378,7 +378,11 @@ class EppClient:
         context.check_hostname = True
 
         context.load_cert_chain(client_certificate, client_key)
-        context.load_verify_locations(cafile = server_certificate)
+
+        if os.path.isdir(server_certificate):
+            context.load_verify_locations(capath = server_certificate)
+        else:
+            context.load_verify_locations(cafile = server_certificate)
 
         self.socket = context.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM), server_hostname = server_name)
         self.socket.settimeout(timeout)
