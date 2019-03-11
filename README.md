@@ -51,6 +51,14 @@ The following environment variables can be used:
 * `EPP_KEY` EPP client private key, used when `--key` is not specified and
    will default to using the same file as `--certificiate`.
 
+KEYS
+----
+
+The following keys are in the `registry/` directory:
+
+* `srs-root-ca.pem` The SSL CA certificate used to authenticate the SSL
+  connection.
+
 USAGE
 -----
 
@@ -181,15 +189,3 @@ first before sending the request.
 sec send-xml
   --file request.xml
 ```
-
-TODO
-----
-
-* Client help messages can be improved.
-
-* Support for sending multiple commands?
-
-* Add an output filter that converts XML to something more readable
-  YAML-like syntax?
-
-* Add XML syntax highlighting.
