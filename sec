@@ -37,6 +37,8 @@ import ssl
 import struct
 import jinja2
 from lxml import etree
+import functools
+from getpass import getpass
 import traceback
 
 
@@ -54,8 +56,8 @@ class InternalError(Exception):
 
 
 class GetOptions():
-    def __init__(self, arguments, program = None):
-        self.last_option = program or 'first'
+    def __init__(self, arguments):
+        self.last_option = None
         self.arguments = arguments
 
     def option(self, allowed = None):
@@ -83,17 +85,23 @@ class GetOptions():
         else:
             argument = None
 
-        if argument is None or not len(argument) or argument[0:2] == '--':
+        if argument is None or argument[0:2] == '--':
             if required:
-                raise ArgumentError('Option --{} requires an argument'.format(self.last_option))
+                if self.last_option:
+                    raise ArgumentError('Option --{} requires an argument'.format(self.last_option))
+
+                raise ArgumentError('An argument is required')
 
             return None
 
         if pattern and not re.search(pattern, argument):
-            raise ArgumentError('Invalid --{} argument: {}'.format(self.last_option, argument))
+            if self.last_option:
+                raise ArgumentError('Invalid --{} argument: {}'.format(self.last_option, argument))
+
+            raise ArgumentError('Invalid first argument')
 
         self.arguments.pop(0)
-        
+
         return argument
 
 
@@ -101,7 +109,7 @@ def parse_arguments():
     arguments = {}
     mode = 'add'
 
-    getopt = GetOptions(sys.argv[1:], program = os.path.basename(sys.argv[0]))
+    getopt = GetOptions(sys.argv[1:])
     action = getopt.argument(False)
 
     if action not in ('hello', 'login', 'domain-create', 'domain-update', 'domain-delete', 'domain-info', 'domain-check', 'domain-transfer', 'domain-renew', 'contact-create', 'contact-update', 'contact-delete', 'contact-info', 'contact-check', 'poll', 'poll-ack', 'send-xml', 'help', 'version'):
@@ -133,6 +141,8 @@ def parse_arguments():
             arguments['client_certificate'] = getopt.argument(True)
         elif option == 'key':
             arguments['client_key'] = getopt.argument(True)
+        elif option == 'key-password':
+            arguments['client_key_password'] = getopt.argument(True)
         elif option == 'timeout':
             option = int(getopt.argument(True, r'(?x) ^ [0-9]+ $'))
         elif option == 'dry-run':
@@ -153,7 +163,7 @@ def parse_arguments():
             argument = getopt.argument(True, r'(?ix) ^ [a-z0-9āēīōū\.\-\*\?]+ $')
 
             if re.search(r'(?ix) [āēīōū]', argument):
-                argument = str(argument.encode('idna'), 'utf-8')
+                argument = argument.encode('idna').decode('utf-8')
 
             arguments['domain_name'] = argument
         elif option == 'period':
@@ -304,6 +314,9 @@ def check_arguments(action, arguments):
             if arguments['client_key'] is None:
                 arguments['client_key'] = arguments['client_certificate']
 
+        if 'client_key_password' not in arguments:
+            arguments['client_key_password'] = os.environ.get('EPP_KEY_PASSWORD')
+
         if 'timeout' not in arguments:
             arguments['timeout'] = 300
     
@@ -371,13 +384,14 @@ def check_arguments(action, arguments):
 
 
 class EppClient:
-    def __init__(self, server_hostname, server_port, server_certificate, client_certificate, client_key, timeout):
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+    def __init__(self, server_hostname, server_port, server_certificate, client_certificate, client_key, client_key_password, timeout):
+        self.socket = None
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
 
         context.verify_mode = ssl.CERT_REQUIRED
         context.check_hostname = True
 
-        context.load_cert_chain(client_certificate, client_key)
+        context.load_cert_chain(client_certificate, client_key, client_key_password or functools.partial(getpass, 'Enter password for ' + client_key + ': '))
 
         if os.path.isdir(server_certificate):
             context.load_verify_locations(capath = server_certificate)
@@ -418,9 +432,8 @@ def main():
 
     if action == 'help':
         template = jinja2.Environment(loader = jinja2.FileSystemLoader(PARENT_DIR + '/templates'), trim_blocks = True).get_template('client-help.j2')
-        content = template.render(arguments)
+        print(template.render(arguments), end = '')
 
-        print(content, end = '')
         return
 
     check_arguments(action, arguments)
@@ -434,19 +447,11 @@ def main():
         content = re.sub(r'(?x) > [ \t\r\n]+ <', '><', template.render(arguments))
 
         xml_document = etree.fromstring(content)
-        print(str(etree.tostring(xml_document, pretty_print = True), 'utf-8'), end = '')
+        print(etree.tostring(xml_document, pretty_print = True).decode('utf-8'), end = '')
 
         return
 
-    server_hostname = arguments['server_hostname']
-    server_port = arguments['server_port']
-    server_certificate = arguments['server_certificate']
-
-    client_certificate = arguments['client_certificate']
-    client_key = arguments['client_key']
-    timeout = arguments['timeout']
-
-    epp_client = EppClient(server_hostname, server_port, server_certificate, client_certificate, client_key, timeout);
+    epp_client = EppClient(arguments['server_hostname'], arguments['server_port'], arguments['server_certificate'], arguments['client_certificate'], arguments['client_key'], arguments['client_key_password'], arguments['timeout']);
 
     # greeting
     xml_document = epp_client.receive()
@@ -455,7 +460,7 @@ def main():
         raise InternalError('No <greeting> element')
 
     if action == 'hello':
-        print(str(etree.tostring(xml_document, pretty_print = True), 'utf-8'), end = '')
+        print(etree.tostring(xml_document, pretty_print = True).decode('utf-8'), end = '')
         return
 
     # login
@@ -480,8 +485,11 @@ def main():
     if action != 'login':
         if action == 'send-xml':
             if 'file' in arguments:
-                with open(arguments['file'], 'r') as file:
-                    content = file.read()
+                try:
+                    with open(arguments['file'], 'r') as file:
+                        content = file.read()
+                except (PermissionError, FileNotFoundError) as error:
+                    raise InternalError(error.strerror + ': ' + error.filename)
             else:
                 content = sys.stdin.read()
         else:
@@ -491,7 +499,7 @@ def main():
         epp_client.send(content)
         xml_document = epp_client.receive()
 
-    print(str(etree.tostring(xml_document, pretty_print = True), 'utf-8'), end = '')
+    print(etree.tostring(xml_document, pretty_print = True).decode('utf-8'), end = '')
 
     # logout
     template = environment.get_template('logout.j2')

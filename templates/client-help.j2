@@ -15,13 +15,14 @@ Action is one of the following:
 
 Global options are
 
-  --username                       Client EPP username
-  --password                       CLient password
-  --server                         Hostname of the the EPP server
-  --port                           Port EPP server is on, defaults to 700
-  --ca-certificate                 File containing the EPP CA certificate for server
-  --certificate                    File containing the EPP client certificate
-  --key                            File containing the EPP client private key
+  --username USERNAME              Client EPP username
+  --password PASSWORD              CLient password
+  --server HOSNTAME                Hostname of the the EPP server
+  --port PORT                      Port EPP server is on, defaults to 700
+  --ca-certificate FILE            File containing the EPP CA certificate for server
+  --certificate FILE               File containing the EPP client certificate
+  --key FILE                       File containing the EPP client private key
+  --key-password PASSWORD          Password to decrypt private key
   --timeout SECONDS                Number of seconds to wait for a response                       
   --new-password PASSWORD          Set new EPP client password                  
   --dry-run                        Print out XML that would have been sent and then exit
@@ -43,6 +44,7 @@ Environment variables that are the defaults for options are:
   EPP_CA_CERTIFICATE               --ca-certificate
   EPP_CERTIFICATE                  --certificate
   EPP_KEY                          --key
+  EPP_KEY_PASSWORD                 --key-password
 
 The 'help' action will display this message.
 
@@ -50,7 +52,7 @@ Run 'sec help ACTION' to see which options are available for that action. The op
 shown in the example command line are required.
 
 {% elif version %}
-sec version 0.1
+sec version 0.2
 
 Copyright 2019 InternetNZ Inc.
 All rights reserved.
