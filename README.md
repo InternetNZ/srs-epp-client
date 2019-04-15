@@ -51,6 +51,9 @@ The following environment variables can be used:
 * `EPP_KEY` EPP client private key, used when `--key` is not specified and
    will default to using the same file as `--certificiate`.
 
+* `EPP_KEY_PASSWORD` Password to decrypted the EPP client private key
+   if `--key-password` is not specified.
+
 KEYS
 ----
 
