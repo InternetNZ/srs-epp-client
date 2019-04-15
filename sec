@@ -333,7 +333,10 @@ def check_arguments(action, arguments):
         arguments['password'] = os.environ.get('EPP_PASSWORD')
                     
         if arguments['password'] is None:
-            raise ArgumentError('No ---password specified')
+            try:
+                arguments['password'] = getpass('Enter password for ' + arguments['username'] + ': ')
+            except EOFError:
+                raise ArgumentError('No password specified')
 
     if action in ('domain-create', 'domain-update', 'domain-delete', 'domain-renew', 'domain-transfer', 'domain-info', 'domain-check'):
         if 'domain_name' not in arguments:
@@ -391,7 +394,10 @@ class EppClient:
         context.verify_mode = ssl.CERT_REQUIRED
         context.check_hostname = True
 
-        context.load_cert_chain(client_certificate, client_key, client_key_password or functools.partial(getpass, 'Enter password for ' + client_key + ': '))
+        try:
+            context.load_cert_chain(client_certificate, client_key, client_key_password or functools.partial(getpass, 'Enter password for ' + client_key + ': '))
+        except EOFError:
+            raise InternalError('No password specified')
 
         if os.path.isdir(server_certificate):
             context.load_verify_locations(capath = server_certificate)
