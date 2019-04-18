@@ -1,5 +1,10 @@
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <command>
-    <poll op="req"/>
+    {% if message_id %}
+      <poll op="ack" msgID="{{ message_id }}" />
+      <clTRID>{{ action_id }}</clTRID>
+    {% else %}
+      <poll op="req" />
+    {% endif %}
   </command>
 </epp>

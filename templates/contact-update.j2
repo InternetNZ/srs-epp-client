@@ -23,7 +23,7 @@
           {% if contact_fax_number %}
             <contact:fax>{{ contact_fax_number }}</contact:fax>
           {% elif contact_no_fax_number %}
-            <contact:fax/>
+            <contact:fax />
           {% endif %}
           {% if contact_email_address %} <contact:email>{{ contact_email_address }}</contact:email> {% endif %}
           {% if contact_disclose is defined %} <contact:disclose flag="{{ contact_disclose | int }}" /> {% endif %}

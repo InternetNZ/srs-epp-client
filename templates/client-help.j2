@@ -10,7 +10,7 @@ Action is one of the following:
   contact-create contact-update contact-delete contact-info contact-check
   domain-create domain-update domain-delete domain-info domain-check
   domain-renew domain-transfer
-  poll poll-ack
+  poll
   send-xml
 
 Global options are
@@ -253,14 +253,9 @@ sec domain-renew --domain NAME --period NUMBER --expires DATE [OPTIONS]
   --action-id ID                   Unique ID for this action
 
 {% elif poll %}
-Get messages.
+Get or acknowledge messages.
 
-sec poll
-
-{% elif poll_ack %}
-Acknowlege a message.
-
-sec poll-ack --message-id ID
+sec poll [OPTIONS]
 
   --message-id ID                  ID of message being acknowleged
   --action-id ID                   Unique ID for this action

@@ -112,7 +112,7 @@ def parse_arguments():
     getopt = GetOptions(sys.argv[1:])
     action = getopt.argument(False)
 
-    if action not in ('hello', 'login', 'domain-create', 'domain-update', 'domain-delete', 'domain-info', 'domain-check', 'domain-transfer', 'domain-renew', 'contact-create', 'contact-update', 'contact-delete', 'contact-info', 'contact-check', 'poll', 'poll-ack', 'send-xml', 'help', 'version'):
+    if action not in ('hello', 'login', 'domain-create', 'domain-update', 'domain-delete', 'domain-info', 'domain-check', 'domain-transfer', 'domain-renew', 'contact-create', 'contact-update', 'contact-delete', 'contact-info', 'contact-check', 'poll', 'send-xml', 'help', 'version'):
         raise ArgumentError('Invalid action, run \'{} help\' to see list of available actions'.format(sys.argv[0]))
 
     if action in ('help', 'version'):
@@ -379,9 +379,6 @@ def check_arguments(action, arguments):
     if action == 'domain-transfer' and 'auth_info' not in arguments:
         raise ArgumentError('No --auth specified')
 
-    if action == 'poll-ack' and 'message_id' not in arguments:
-        raise ArgumentError('No --message-id specified')
-
     if action == 'send-xml' and 'dry_run' in arguments:
         raise ArgumentError('send-xml does not support --dry-run')
 
@@ -445,7 +442,7 @@ def main():
     check_arguments(action, arguments)
     environment = jinja2.Environment(loader = jinja2.FileSystemLoader(PARENT_DIR + '/templates'), autoescape = True)
 
-    if 'action_id' not in arguments and action in ('domain-create', 'domain-update', 'domain-delete', 'domain-transfer', 'domain-renew', 'contact-create', 'contact-update', 'contact-delete', 'poll-ack'):
+    if 'action_id' not in arguments and action in ('domain-create', 'domain-update', 'domain-delete', 'domain-transfer', 'domain-renew', 'contact-create', 'contact-update', 'contact-delete', 'poll'):
         arguments['action_id'] = uuid.uuid1()
 
     if 'dry_run' in arguments:
