@@ -421,7 +421,12 @@ class EppClient:
         if length <= 4:
             raise InternalError('Invalid response length: {}'.format(length - 4))
 
-        response = self.socket.read(length - 4)
+        length -= 4
+        response = b''
+
+        while len(response) < length:
+            response += self.socket.read(length - len(response))
+
         xml_document = etree.fromstring(response)
 
         if xml_document.tag != '{urn:ietf:params:xml:ns:epp-1.0}epp':
