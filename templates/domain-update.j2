@@ -51,7 +51,7 @@
               {% elif remove_no_admin_id %}
                 <domain:contact type="admin" />
               {% endif %}
-              {% if no_technical_id %}
+              {% if remove_technical_id %}
                 <domain:contact type="tech">{{ remove_technical_id }}</domain:contact>
               {% elif no_technical_id %}
                 <domain:contact type="tech" />

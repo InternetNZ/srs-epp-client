@@ -176,7 +176,7 @@ def parse_arguments():
             arguments['new_auth_info'] = True
         elif option == 'expires':
             argument = getopt.argument(True)
-            match = re.search(r'(?x) (?P<day> [0-9]{1,2}) / (?P<month> [0-9]{1,2}) / (?P<year> [0-9]{4}) $', argument)
+            match = re.search(r'(?x) (?P<day> [0-9]{2}) / (?P<month> [0-9]{2}) / (?P<year> [0-9]{4}) $', argument)
 
             if match is None:
                 raise ArgumentError('Invalid --expires: {}'.format(argument))
