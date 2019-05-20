@@ -65,7 +65,7 @@ The following keys are in the `registry/` directory:
 USAGE
 -----
 
-Usage: `sec ACTION OPTIONS`. Run `sxc help` to see available
+Usage: `sec ACTION OPTIONS`. Run `sec help` to see available
 actions.
 
 Each action has a help message that shows all the possible options for that

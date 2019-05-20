@@ -15,7 +15,7 @@
             {% endfor %}
           </domain:ns>
         {% endif %}
-        <domain:registrant>{{ add_registrant_id }}</domain:registrant>
+        <domain:registrant>{{ registrant_id }}</domain:registrant>
         {% if add_admin_id %} <domain:contact type="admin">{{ add_admin_id }}</domain:contact> {% endif %}
         {% if add_technical_id %} <domain:contact type="tech">{{ add_technical_id }}</domain:contact> {% endif %}
         <domain:authInfo>

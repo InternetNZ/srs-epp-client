@@ -216,7 +216,11 @@ def parse_arguments():
                     arguments['contact_disclose'] = option.startswith('un')
 
         elif option in ('registrant', 'admin', 'technical'):
-            contact = mode + '_' + re.sub('-', '_', option) + '_id'
+            if option == 'registrant':
+                contact = option + '_id'
+            else:
+                contact = mode + '_' + option + '_id'
+
             arguments[contact] = getopt.argument(True, r'(?ix) ^ [a-z0-9_\-] [0-9a-z_\-]{3,14} [a-z0-9_\-] $')
         elif option in ('no-admin', 'no-technical'):
             contact = re.sub('-', '_', option) + '_id'
