@@ -184,7 +184,7 @@ Update a domain.
 sec domain-update --domain NAME [OPTIONS]
 
   --domain NAME                    Name of the domain
-  --add --remove                   Set whether the next --registrant, --admin, --technical or --nameserver is being added or removed, default is --add
+  --add --remove                   Set whether the next --registrant, --admin, --technical, --nameserver or --secdns is being added or removed, default is --add
 
   --registrant ID                  ID of the registrant contact
   --admin ID                       ID of the admin contact
@@ -205,7 +205,6 @@ sec domain-update --domain NAME [OPTIONS]
     --type NUMBER                  Digest type
     --algorithm NUMBER             Key algorithm
 
-  --no-secdns                      Remove all --secdns records
   --action-id ID                   Unique ID of this action
 
   --new-auth                       Request new domain password.

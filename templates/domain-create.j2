@@ -23,10 +23,10 @@
         </domain:authInfo>
       </domain:create>
     </create>
-    {% if secdns_keys %}
+    {% if add_secdns_keys %}
       <extension>
         <secDNS:create xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1">
-          {% for secdns_key in secdns_keys %}
+          {% for secdns_key in add_secdns_keys %}
             <secDNS:dsData>
               <secDNS:keyTag>{{ secdns_key.key_tag }}</secDNS:keyTag>
               <secDNS:alg>{{ secdns_key.algorithm }}</secDNS:alg>

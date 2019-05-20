@@ -23,11 +23,11 @@
                   {% endfor %}
                 </domain:ns>
               {% endif %}
+              {% if add_admin_id %} <domain:contact type="admin">{{ add_admin_id }}</domain:contact> {% endif %}
+              {% if add_technical_id %} <domain:contact type="tech">{{ add_technical_id }}</domain:contact> {% endif %}
               {% if hold is defined and hold %}
                 <domain:status s="clientHold" />
               {% endif %}
-              {% if add_admin_id %} <domain:contact type="admin">{{ add_admin_id }}</domain:contact> {% endif %}
-              {% if add_technical_id %} <domain:contact type="tech">{{ add_technical_id }}</domain:contact> {% endif %}
             </domain:add>
           {% endif %}
           {% if remove_name_servers or (hold is defined and not hold) or remove_admin_id or remove_technical_id %}
@@ -43,9 +43,6 @@
                   {% endfor %}
                 </domain:ns>
               {% endif %}
-              {% if hold is defined and not hold %}
-                <domain:status s="clientHold" />
-              {% endif %}
               {% if remove_admin_id %}
                 <domain:contact type="admin">{{ remove_admin_id }}</domain:contact>
               {% elif remove_no_admin_id %}
@@ -56,22 +53,46 @@
               {% elif no_technical_id %}
                 <domain:contact type="tech" />
               {% endif %}
+              {% if hold is defined and not hold %}
+                <domain:status s="clientHold" />
+              {% endif %}
             </domain:rem>
+          {% endif %}
+          {% if add_registrant_id %}
+            <domain:chg>
+              <domain:registrant>{{ add_registrant_id }}</domain:registrant>
+            </domain:chg>
           {% endif %}
         {% endif %}
       </domain:update>
     </update>
-    {% if secdns_keys %}
+    {% if add_secdns_keys or remove_secdns_keys %}
       <extension>
         <secDNS:update xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1">
-          {% for secdns_key in secdns_keys %}
-            <secDNS:dsData>
-              <secDNS:keyTag>{{ secdns_key.key_tag }}</secDNS:keyTag>
-              <secDNS:alg>{{ secdns_key.algorithm }}</secDNS:alg>
-              <secDNS:digestType>{{ secdns_key.digest_type }}</secDNS:digestType>
-              <secDNS:digest>{{ secdns_key.digest }}</secDNS:digest>
-            </secDNS:dsData>
-          {% endfor %}
+          {% if add_secdns_keys %}
+            <secDNS:add>
+            {% for secdns_key in add_secdns_keys %}
+              <secDNS:dsData>
+                <secDNS:keyTag>{{ secdns_key.key_tag }}</secDNS:keyTag>
+                <secDNS:alg>{{ secdns_key.algorithm }}</secDNS:alg>
+                <secDNS:digestType>{{ secdns_key.digest_type }}</secDNS:digestType>
+                <secDNS:digest>{{ secdns_key.digest }}</secDNS:digest>
+              </secDNS:dsData>
+            {% endfor %}
+            </secDNS:add>
+          {% endif %}
+          {% if remove_secdns_keys %}
+            <secDNS:rem>
+            {% for secdns_key in remove_secdns_keys %}
+              <secDNS:dsData>
+                <secDNS:keyTag>{{ secdns_key.key_tag }}</secDNS:keyTag>
+                <secDNS:alg>{{ secdns_key.algorithm }}</secDNS:alg>
+                <secDNS:digestType>{{ secdns_key.digest_type }}</secDNS:digestType>
+                <secDNS:digest>{{ secdns_key.digest }}</secDNS:digest>
+              </secDNS:dsData>
+            {% endfor %}
+            </secDNS:rem>
+          {% endif %}
         </secDNS:update>
       </extension>
     {% endif %}
