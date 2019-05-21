@@ -2,7 +2,7 @@
   <command>
     <update>
       <contact:update xmlns:contact="urn:ietf:params:xml:ns:contact-1.0">
-        <contact:id>{{ contact_id }}</contact:id>
+        <contact:id>{{ contact_handle }}</contact:id>
         <contact:chg>
           {% if contact_name or contact_street1 or contact_street2 or contact_city or contact_province or contact_country or contact_postcode %}
             <contact:postalInfo type="int">
@@ -30,6 +30,6 @@
         </contact:chg>
       </contact:update>
     </update>
-    <clTRID>{{ action_id }}</clTRID>
+    <clTRID>{{ transaction_id }}</clTRID>
   </command>
 </epp>

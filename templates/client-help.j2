@@ -52,7 +52,7 @@ Run 'sec help ACTION' to see which options are available for that action. The op
 shown in the example command line are required.
 
 {% elif version %}
-sec version 0.2
+sec version 0.3
 
 Copyright 2019 InternetNZ Inc.
 All rights reserved.
@@ -112,7 +112,7 @@ sec contact-create --contact ID --name NAME --street1 TEXT --city TEXT --country
     --fax FAX                      Fax number
     --disclose --undisclose        Disable or enable privacy
 
-  --action-id ID                   Unique ID for this action
+  --transaction-id ID              Unique ID for this action
 
 {% elif contact_update %}
 Update a contact.
@@ -132,7 +132,7 @@ sec contact-update --contact ID [OPTIONS]
     --fax FAX                      Fax number
     --disclose --undisclose        Disable or enable privacy
 
-  --action-id ID                   Unique ID for this action
+  --transaction-id ID              Unique ID for this action
   
 {% elif contact_delete %}
 Delete a contact.
@@ -151,9 +151,9 @@ sec contact-info --contact ID [OPTIONS]
 {% elif contact_check %}
 Check if a contact exists.
 
-sec contact-check --contact ID [OPTIONS]
+sec contact-check --contact ID [ID]* [OPTIONS]
 
-  --contact ID                     ID of the contact
+  --contact ID [ID]*               ID of the contact
   
 {% elif domain_create %}
 Create (register) a domain.
@@ -176,7 +176,7 @@ sec domain-create --domain NAME --period NUMBER --registrant ID [OPTIONS]
     --type NUMBER                  Digest type
     --algorithm NUMBER             Key algorithm
 
-  --action-id ID                   Unique ID of this action
+  --transaction-id ID              Unique ID of this action
 
 {% elif domain_update %}
 Update a domain.
@@ -205,10 +205,10 @@ sec domain-update --domain NAME [OPTIONS]
     --type NUMBER                  Digest type
     --algorithm NUMBER             Key algorithm
 
-  --action-id ID                   Unique ID of this action
+  --transaction-id ID              Unique ID of this action
 
   --new-auth                       Request new domain password.
-  --action-id ID                   Unique ID for this action
+  --transaction-id ID              Unique ID for this action
 
 {% elif domain_delete %}
 Delete (cancel) a domain.
@@ -216,7 +216,7 @@ Delete (cancel) a domain.
 sec domain-delete --domain NAME [OPTIONS]
 
   --domain NAME                    Name of the domain
-  --action-id ID                   Unique ID for this action
+  --transaction-id ID              Unique ID for this action
   
 {% elif domain_info %}
 Get domain details.
@@ -229,9 +229,9 @@ sec domain-info --domain NAME [OPTIONS]
 {% elif domain_check %}
 Check if a domain exists.
 
-sec domain-check --domain NAME [OPTIONS]
+sec domain-check --domain NAME [NAME]* [OPTIONS]
 
-  --domain NAME                    Name of the domain
+  --domain NAME [NAME]*            Name of the domain
   
 {% elif domain_transfer %}
 Transfer a domain.
@@ -240,7 +240,7 @@ sec domain-transfer --domain NAME --auth AUTH [OPTIONS]
 
   --domain NAME                    Name of the domain
   --auth PASSWORD                  Password for the domain
-  --action-id ID                   Unique ID for this action
+  --transaction-id ID              Unique ID for this action
 
 {% elif domain_renew %}
 Renew a domain.
@@ -250,7 +250,7 @@ sec domain-renew --domain NAME --period NUMBER --expires DATE [OPTIONS]
   --domain NAME                    Name of the domain
   --period NUMBER                  Number of months to register domain
   --expires DATE                   Current expiry date for domain
-  --action-id ID                   Unique ID for this action
+  --transaction-id ID              Unique ID for this action
 
 {% elif poll %}
 Get or acknowledge messages.
@@ -258,7 +258,7 @@ Get or acknowledge messages.
 sec poll [OPTIONS]
 
   --message-id ID                  ID of message being acknowleged
-  --action-id ID                   Unique ID for this action
+  --transaction-id ID              Unique ID for this action
 
 {% elif send_xml %}
 Send a raw XML request, will use stdin if no input file is specified.

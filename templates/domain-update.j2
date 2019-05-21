@@ -10,7 +10,7 @@
             </domain:authInfo>
           </domain:chg>
         {% else %}
-          {% if add_name_servers or (hold is defined and hold) or add_admin_id or add_technical_id %}
+          {% if add_name_servers or (hold is defined and hold) or add_admin_handle or add_technical_handle %}
             <domain:add>
               {% if add_name_servers %}
                 <domain:ns>
@@ -23,14 +23,14 @@
                   {% endfor %}
                 </domain:ns>
               {% endif %}
-              {% if add_admin_id %} <domain:contact type="admin">{{ add_admin_id }}</domain:contact> {% endif %}
-              {% if add_technical_id %} <domain:contact type="tech">{{ add_technical_id }}</domain:contact> {% endif %}
+              {% if add_admin_handle %} <domain:contact type="admin">{{ add_admin_handle }}</domain:contact> {% endif %}
+              {% if add_technical_handle %} <domain:contact type="tech">{{ add_technical_handle }}</domain:contact> {% endif %}
               {% if hold is defined and hold %}
                 <domain:status s="clientHold" />
               {% endif %}
             </domain:add>
           {% endif %}
-          {% if remove_name_servers or (hold is defined and not hold) or remove_admin_id or remove_technical_id %}
+          {% if remove_name_servers or (hold is defined and not hold) or remove_admin_handle or remove_technical_handle %}
             <domain:rem>
               {% if remove_name_servers %}
                 <domain:ns>
@@ -43,14 +43,14 @@
                   {% endfor %}
                 </domain:ns>
               {% endif %}
-              {% if remove_admin_id %}
-                <domain:contact type="admin">{{ remove_admin_id }}</domain:contact>
-              {% elif remove_no_admin_id %}
+              {% if remove_admin_handle %}
+                <domain:contact type="admin">{{ remove_admin_handle }}</domain:contact>
+              {% elif remove_no_admin_handle %}
                 <domain:contact type="admin" />
               {% endif %}
-              {% if remove_technical_id %}
-                <domain:contact type="tech">{{ remove_technical_id }}</domain:contact>
-              {% elif no_technical_id %}
+              {% if remove_technical_handle %}
+                <domain:contact type="tech">{{ remove_technical_handle }}</domain:contact>
+              {% elif no_technical_handle %}
                 <domain:contact type="tech" />
               {% endif %}
               {% if hold is defined and not hold %}
@@ -58,9 +58,9 @@
               {% endif %}
             </domain:rem>
           {% endif %}
-          {% if registrant_id %}
+          {% if registrant_handle %}
             <domain:chg>
-              <domain:registrant>{{ registrant_id }}</domain:registrant>
+              <domain:registrant>{{ registrant_handle }}</domain:registrant>
             </domain:chg>
           {% endif %}
         {% endif %}
@@ -96,6 +96,6 @@
         </secDNS:update>
       </extension>
     {% endif %}
-    <clTRID>{{ action_id }}</clTRID>
+    <clTRID>{{ transaction_id }}</clTRID>
   </command>
 </epp>

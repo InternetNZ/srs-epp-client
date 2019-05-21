@@ -2,7 +2,7 @@
   <command>
     {% if message_id %}
       <poll op="ack" msgID="{{ message_id }}" />
-      <clTRID>{{ action_id }}</clTRID>
+      <clTRID>{{ transaction_id }}</clTRID>
     {% else %}
       <poll op="req" />
     {% endif %}

@@ -160,12 +160,25 @@ def parse_arguments():
 
         # domain
         elif option == 'domain':
-            argument = getopt.argument(True, r'(?ix) ^ [a-z0-9āēīōū\.\-\*\?]+ $')
+            required = True
 
-            if re.search(r'(?ix) [āēīōū]', argument):
-                argument = argument.encode('idna').decode('utf-8')
+            while True:
+                argument = getopt.argument(required, r'(?ix) ^ [a-z0-9āēīōū\.\-\*\?]+ $')
 
-            arguments['domain_name'] = argument
+                if argument is None:
+                    break
+
+                if re.search(r'(?ix) [āēīōū]', argument):
+                    argument = argument.encode('idna').decode('utf-8')
+
+                arguments['domain_name'] = argument
+
+                if 'domain_names' not in arguments:
+                    arguments['domain_names'] = []
+
+                arguments['domain_names'].append(argument)
+                required = False
+
         elif option == 'period':
             arguments['period'] = int(getopt.argument(True, r'(?x) ^ [0-9]+ $'))
         elif option in ('hold', 'unhold'):
@@ -185,7 +198,21 @@ def parse_arguments():
 
         # contact
         elif option == 'contact':
-            arguments['contact_id'] = getopt.argument(True, r'(?ix) ^ [a-z0-9_\-] [0-9a-z_\-]{3,14} [a-z0-9_\-] $')
+            required = True
+
+            while True:
+                argument = getopt.argument(required, r'(?ix) ^ [a-z0-9_\-] [0-9a-z_\-]{3,14} [a-z0-9_\-] $')
+
+                if argument is None:
+                    break
+
+                arguments['contact_handle'] = argument
+
+                if 'contact_handles' not in arguments:
+                    arguments['contact_handles'] = []
+
+                arguments['contact_handles'].append(argument)
+                required = False
 
             while True:
                 option = getopt.option(('name', 'email', 'street1', 'street2', 'city', 'province', 'country', 'postcode', 'phone', 'fax', 'no-fax', 'disclose', 'undisclose'))
@@ -217,13 +244,13 @@ def parse_arguments():
 
         elif option in ('registrant', 'admin', 'technical'):
             if option == 'registrant':
-                contact = option + '_id'
+                contact = option + '_handle'
             else:
-                contact = mode + '_' + option + '_id'
+                contact = mode + '_' + option + '_handle'
 
             arguments[contact] = getopt.argument(True, r'(?ix) ^ [a-z0-9_\-] [0-9a-z_\-]{3,14} [a-z0-9_\-] $')
         elif option in ('no-admin', 'no-technical'):
-            contact = re.sub('-', '_', option) + '_id'
+            contact = re.sub('-', '_', option) + '_handle'
             arguments[contact] = True
 
         # name servers
@@ -271,7 +298,7 @@ def parse_arguments():
                     arguments[secdns_keys][-1]['algorithm'] = int(getopt.argument(True, r'(?x) ^ [0-9]+ $'))
 
         # poll
-        elif option in ('action-id', 'message-id'):
+        elif option in ('transaction-id', 'message-id'):
             id = re.sub('-', '_', option)
             arguments[id] = getopt.argument(True)
 
@@ -355,7 +382,7 @@ def check_arguments(action, arguments):
         raise ArgumentError('No --auth specified')
 
     if action in ('contact-create', 'contact-update', 'contact-delete', 'contact-info', 'contact-check'):
-        if 'contact_id' not in arguments:
+        if 'contact_handle' not in arguments:
             raise ArgumentError('No --contact specified')
 
     if action == 'contact-create':
@@ -450,8 +477,8 @@ def main():
     check_arguments(action, arguments)
     environment = jinja2.Environment(loader = jinja2.FileSystemLoader(PARENT_DIR + '/templates'), autoescape = True)
 
-    if 'action_id' not in arguments and action in ('domain-create', 'domain-update', 'domain-delete', 'domain-transfer', 'domain-renew', 'contact-create', 'contact-update', 'contact-delete', 'poll'):
-        arguments['action_id'] = uuid.uuid1()
+    if 'transaction_id' not in arguments and action in ('domain-create', 'domain-update', 'domain-delete', 'domain-transfer', 'domain-renew', 'contact-create', 'contact-update', 'contact-delete', 'poll'):
+        arguments['transaction_id'] = uuid.uuid1()
 
     if 'dry_run' in arguments:
         template = environment.get_template(action + '.j2')

@@ -15,9 +15,9 @@
             {% endfor %}
           </domain:ns>
         {% endif %}
-        <domain:registrant>{{ registrant_id }}</domain:registrant>
-        {% if add_admin_id %} <domain:contact type="admin">{{ add_admin_id }}</domain:contact> {% endif %}
-        {% if add_technical_id %} <domain:contact type="tech">{{ add_technical_id }}</domain:contact> {% endif %}
+        <domain:registrant>{{ registrant_handle }}</domain:registrant>
+        {% if add_admin_handle %} <domain:contact type="admin">{{ add_admin_handle }}</domain:contact> {% endif %}
+        {% if add_technical_handle %} <domain:contact type="tech">{{ add_technical_handle }}</domain:contact> {% endif %}
         <domain:authInfo>
           <domain:pw></domain:pw>
         </domain:authInfo>
@@ -37,6 +37,6 @@
         </secDNS:create>
       </extension>
     {% endif %}
-    <clTRID>{{ action_id }}</clTRID>
+    <clTRID>{{ transaction_id }}</clTRID>
   </command>
 </epp>

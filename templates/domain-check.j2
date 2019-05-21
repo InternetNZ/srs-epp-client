@@ -2,7 +2,9 @@
   <command>
     <check>
       <domain:check xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
-        <domain:name>{{ domain_name }}</domain:name>
+        {% for domain_name in domain_names %}
+          <domain:name>{{ domain_name }}</domain:name>
+        {% endfor %}
       </domain:check>
     </check>
   </command>
