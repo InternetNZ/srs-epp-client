@@ -240,7 +240,7 @@ def parse_arguments():
                 elif option == 'no-fax':
                     arguments['contact_no_fax'] = True
                 elif option in ('disclose', 'undisclose'):
-                    arguments['contact_disclose'] = option.startswith('un')
+                    arguments['contact_disclose'] = not option.startswith('un')
 
         elif option in ('registrant', 'admin', 'technical'):
             if option == 'registrant':
