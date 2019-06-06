@@ -17,10 +17,16 @@
         <contact:voice>{{ contact_phone_number }}</contact:voice>
         {% if contact_fax_number %} <contact:fax>{{ contact_fax_number }}</contact:fax> {% endif %}
         <contact:email>{{ contact_email_address }}</contact:email>
-        {% if contact_disclose is defined %} <contact:disclose flag="{{ contact_disclose | int }}" /> {% endif %}
         <contact:authInfo>
           <contact:pw></contact:pw>
         </contact:authInfo>
+        {% if contact_disclose is defined %}
+          <contact:disclose flag="{{ contact_disclose | lower }}">
+            <contact:addr type="int"/>
+            <contact:voice/>
+            <contact:fax/>
+          </contact:disclose>
+        {% endif %}
       </contact:create>
     </create>
     <clTRID>{{ transaction_id }}</clTRID>

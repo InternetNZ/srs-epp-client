@@ -26,7 +26,13 @@
             <contact:fax />
           {% endif %}
           {% if contact_email_address %} <contact:email>{{ contact_email_address }}</contact:email> {% endif %}
-          {% if contact_disclose is defined %} <contact:disclose flag="{{ contact_disclose | int }}" /> {% endif %}
+          {% if contact_disclose is defined %}
+            <contact:disclose flag="{{ contact_disclose | lower }}">
+              <contact:addr type="int"/>
+              <contact:voice/>
+              <contact:fax/>
+            </contact:disclose>
+          {% endif %}
         </contact:chg>
       </contact:update>
     </update>
