@@ -42,7 +42,7 @@ from getpass import getpass
 import traceback
 
 
-PARENT_DIR = os.path.dirname(sys.argv[0])
+PARENT_DIR = os.path.dirname(sys.argv[0]) or './'
 SERVER_CERTIFICATE = 'registry/srs-root-ca.pem'
 SERVER_PORT = 700
 
