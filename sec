@@ -43,8 +43,11 @@ import traceback
 
 
 PARENT_DIR = os.path.dirname(sys.argv[0]) or './'
+
 SERVER_CERTIFICATE = 'registry/srs-root-ca.pem'
 SERVER_PORT = 700
+
+EPP_NAMESPACE = 'urn:ietf:params:xml:ns:epp-1.0'
 
 
 class ArgumentError(Exception):
@@ -459,8 +462,11 @@ class EppClient:
 
         xml_document = etree.fromstring(response)
 
-        if xml_document.tag != '{urn:ietf:params:xml:ns:epp-1.0}epp':
+        if etree.QName(xml_document).localname != 'epp':
             raise InternalError('XML document is not <epp>: {}'.format(xml_document.tag))
+
+        if etree.QName(xml_document).namespace != EPP_NAMESPACE:
+            raise InternalError('Element <epp> has wrong namespace: {}'.format(xml_document.tag))
 
         return xml_document
 
@@ -494,7 +500,7 @@ def main():
     # greeting
     xml_document = epp_client.receive()
 
-    if xml_document.find('{urn:ietf:params:xml:ns:epp-1.0}greeting') is None:
+    if xml_document.find('epp:greeting', {'epp': EPP_NAMESPACE}) is None:
         raise InternalError('No <greeting> element')
 
     if action == 'hello':
@@ -508,7 +514,7 @@ def main():
     epp_client.send(content)
     xml_document = epp_client.receive()
 
-    result = xml_document.find('{urn:ietf:params:xml:ns:epp-1.0}response/{urn:ietf:params:xml:ns:epp-1.0}result');
+    result = xml_document.find('epp:response/epp:result', {'epp': EPP_NAMESPACE});
 
     if result is None:
         raise InternalError('No <result> element in <response>')
@@ -516,7 +522,7 @@ def main():
     code = int(result.get('code', 0))
 
     if code != 1000:
-        error = result.find('{urn:ietf:params:xml:ns:epp-1.0}msg')
+        error = result.find('epp:msg', {'epp': EPP_NAMESPACE})
         raise InternalError('Login error: {}'.format(error.text if error is not None else code))
 
     # action
@@ -546,7 +552,7 @@ def main():
     epp_client.send(content)
     xml_document = epp_client.receive()
 
-    result = xml_document.find('{urn:ietf:params:xml:ns:epp-1.0}response/{urn:ietf:params:xml:ns:epp-1.0}result');
+    result = xml_document.find('epp:response/epp:result', {'epp': EPP_NAMESPACE});
 
     if result is None:
         raise InternalError('No <result> element in <response>')
@@ -554,7 +560,7 @@ def main():
     code = int(result.get('code', 0))
 
     if code != 1500:
-        error = result.find('{urn:ietf:params:xml:ns:epp-1.0}msg')
+        error = result.find('epp:msg', {'epp': EPP_NAMESPACE})
         raise InternalError('Logout error: {}'.format(error.text if error is not None else code))
 
 
