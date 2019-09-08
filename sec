@@ -31,14 +31,16 @@
 import sys
 import os
 import re
-import uuid
 import socket
 import ssl
-import struct
 import jinja2
 from lxml import etree
 import functools
 from getpass import getpass
+import time
+import struct
+import random
+import binascii
 import traceback
 
 
@@ -150,6 +152,8 @@ def parse_arguments():
             option = int(getopt.argument(True, r'(?x) ^ [0-9]+ $'))
         elif option == 'dry-run':
             arguments['dry_run'] = True
+        elif option == 'skip-check':
+            arguments['check_hostname'] = False
         elif option in ('add', 'remove'):
             mode = option
 
@@ -353,6 +357,9 @@ def check_arguments(action, arguments):
         if 'timeout' not in arguments:
             arguments['timeout'] = 300
 
+        if 'check_hostname' not in arguments:
+            arguments['check_hostname'] = True
+
     if action == 'hello':
         return
 
@@ -417,12 +424,12 @@ def check_arguments(action, arguments):
 
 
 class EppClient:
-    def __init__(self, server_hostname, server_port, server_certificate, client_certificate, client_key, client_key_password, timeout):
+    def __init__(self, server_hostname, server_port, server_certificate, client_certificate, client_key, client_key_password, timeout, check_hostname):
         self.socket = None
         context = ssl.SSLContext(ssl.PROTOCOL_TLS)
 
         context.verify_mode = ssl.CERT_REQUIRED
-        context.check_hostname = True
+        context.check_hostname = check_hostname
 
         try:
             context.load_cert_chain(client_certificate, client_key, client_key_password or functools.partial(getpass, 'Enter password for ' + client_key + ': '))
@@ -484,7 +491,10 @@ def main():
     environment = jinja2.Environment(loader = jinja2.FileSystemLoader(PARENT_DIR + '/templates'), autoescape = True)
 
     if 'transaction_id' not in arguments and action in ('domain-create', 'domain-update', 'domain-delete', 'domain-transfer', 'domain-renew', 'contact-create', 'contact-update', 'contact-delete', 'poll'):
-        arguments['transaction_id'] = uuid.uuid1()
+        now = time.time()
+        seconds, microseconds = int(now), int((now - int(now)) * 1000000)
+
+        arguments['transaction_id'] = binascii.hexlify(struct.pack('>II', seconds, (microseconds << 12) | random.randrange(0, 2 << 12))).decode('utf-8')
 
     if 'dry_run' in arguments:
         template = environment.get_template(action + '.j2')
@@ -495,7 +505,7 @@ def main():
 
         return
 
-    epp_client = EppClient(arguments['server_hostname'], arguments['server_port'], arguments['server_certificate'], arguments['client_certificate'], arguments['client_key'], arguments['client_key_password'], arguments['timeout']);
+    epp_client = EppClient(arguments['server_hostname'], arguments['server_port'], arguments['server_certificate'], arguments['client_certificate'], arguments['client_key'], arguments['client_key_password'], arguments['timeout'], arguments['check_hostname']);
 
     # greeting
     xml_document = epp_client.receive()
