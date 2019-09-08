@@ -21,11 +21,10 @@ client itself.
 REQUIRED MODULES
 ----------------
 
-`sec` uses the following non-standard python modules: lxml, requests and
-jinja2.
+`sec` uses the following non-standard python modules: lxml and jinja2.
 
 These are all available as Debian packages, to install them run:
-`sudo apt-get install python3-lxml python3-requests python3-jinja2`.
+`sudo apt-get install python3-lxml python3-jinja2`.
 
 ENVIRONMENT
 -----------
