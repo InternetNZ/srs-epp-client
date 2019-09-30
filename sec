@@ -44,12 +44,12 @@ import binascii
 import traceback
 
 
-PARENT_DIR = os.path.dirname(sys.argv[0]) or './'
+parent_dir = os.path.dirname(sys.argv[0]) or './'
 
-SERVER_CERTIFICATE = 'registry/srs-root-ca.pem'
-SERVER_PORT = 700
+server_certificate = 'registry/srs-root-ca.pem'
+server_port = 700
 
-EPP_NAMESPACE = 'urn:ietf:params:xml:ns:epp-1.0'
+epp_namespace = 'urn:ietf:params:xml:ns:epp-1.0'
 
 
 class ArgumentError(Exception):
@@ -331,13 +331,13 @@ def check_arguments(action, arguments):
             arguments['server_port'] = int(os.environ.get('EPP_PORT', 0))
 
             if arguments['server_port'] is 0:
-                arguments['server_port'] = SERVER_PORT
+                arguments['server_port'] = server_port
 
         if 'server_certificate' not in arguments:
             arguments['server_certificate'] = os.environ.get('EPP_CA_CERTIFICATE')
 
             if arguments['server_certificate'] is None:
-                arguments['server_certificate'] = PARENT_DIR + '/' + SERVER_CERTIFICATE
+                arguments['server_certificate'] = parent_dir + '/' + server_certificate
 
         if 'client_certificate' not in arguments:
             arguments['client_certificate'] = os.environ.get('EPP_CERTIFICATE')
@@ -443,7 +443,17 @@ class EppClient:
 
         self.socket = context.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM), server_hostname = server_hostname)
         self.socket.settimeout(timeout)
-        self.socket.connect((server_hostname, server_port))
+
+        try:
+            self.socket.connect((server_hostname, server_port))
+
+        except ConnectionRefusedError as error:
+            raise InternalError(error)
+
+        except ssl.SSLError as error:
+            reason = re.sub(r'(?x) ^ \[SSL: \  [A-Z_]+ \] \  (.*) \  \(_ssl\.c:[0-9]+\) $', r'\1', error.strerror)
+
+            raise InternalError('SSL: ' + reason)
 
     def __del__(self):
         if self.socket is not None:
@@ -472,7 +482,7 @@ class EppClient:
         if etree.QName(xml_document).localname != 'epp':
             raise InternalError('XML document is not <epp>: {}'.format(xml_document.tag))
 
-        if etree.QName(xml_document).namespace != EPP_NAMESPACE:
+        if etree.QName(xml_document).namespace != epp_namespace:
             raise InternalError('Element <epp> has wrong namespace: {}'.format(xml_document.tag))
 
         return xml_document
@@ -482,13 +492,13 @@ def main():
     action, arguments = parse_arguments()
 
     if action == 'help':
-        template = jinja2.Environment(loader = jinja2.FileSystemLoader(PARENT_DIR + '/templates'), trim_blocks = True).get_template('client-help.j2')
+        template = jinja2.Environment(loader = jinja2.FileSystemLoader(parent_dir + '/templates'), trim_blocks = True).get_template('client-help.j2')
         print(template.render(arguments), end = '')
 
         return
 
     check_arguments(action, arguments)
-    environment = jinja2.Environment(loader = jinja2.FileSystemLoader(PARENT_DIR + '/templates'), autoescape = True)
+    environment = jinja2.Environment(loader = jinja2.FileSystemLoader(parent_dir + '/templates'), autoescape = True)
 
     if 'transaction_id' not in arguments and action in ('domain-create', 'domain-update', 'domain-delete', 'domain-transfer', 'domain-renew', 'contact-create', 'contact-update', 'contact-delete', 'poll'):
         now = time.time()
@@ -500,7 +510,7 @@ def main():
         template = environment.get_template(action + '.j2')
         content = re.sub(r'(?x) > [ \t\r\n]+ <', '><', template.render(arguments))
 
-        xml_document = etree.fromstring(content)
+        xml_document = etree.fromstring(content.encode('utf-8'))
         print(etree.tostring(xml_document, pretty_print = True).decode('utf-8'), end = '')
 
         return
@@ -510,7 +520,7 @@ def main():
     # greeting
     xml_document = epp_client.receive()
 
-    if xml_document.find('epp:greeting', {'epp': EPP_NAMESPACE}) is None:
+    if xml_document.find('epp:greeting', {'epp': epp_namespace}) is None:
         raise InternalError('No <greeting> element')
 
     if action == 'hello':
@@ -524,7 +534,7 @@ def main():
     epp_client.send(content)
     xml_document = epp_client.receive()
 
-    result = xml_document.find('epp:response/epp:result', {'epp': EPP_NAMESPACE});
+    result = xml_document.find('epp:response/epp:result', {'epp': epp_namespace});
 
     if result is None:
         raise InternalError('No <result> element in <response>')
@@ -532,7 +542,7 @@ def main():
     code = int(result.get('code', 0))
 
     if code != 1000:
-        error = result.find('epp:msg', {'epp': EPP_NAMESPACE})
+        error = result.find('epp:msg', {'epp': epp_namespace})
         raise InternalError('Login error: {}'.format(error.text if error is not None else code))
 
     # action
@@ -562,7 +572,7 @@ def main():
     epp_client.send(content)
     xml_document = epp_client.receive()
 
-    result = xml_document.find('epp:response/epp:result', {'epp': EPP_NAMESPACE});
+    result = xml_document.find('epp:response/epp:result', {'epp': epp_namespace});
 
     if result is None:
         raise InternalError('No <result> element in <response>')
@@ -570,7 +580,7 @@ def main():
     code = int(result.get('code', 0))
 
     if code != 1500:
-        error = result.find('epp:msg', {'epp': EPP_NAMESPACE})
+        error = result.find('epp:msg', {'epp': epp_namespace})
         raise InternalError('Logout error: {}'.format(error.text if error is not None else code))
 
 
