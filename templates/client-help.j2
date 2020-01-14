@@ -1,4 +1,4 @@
-{% if help %}
+{% if help == 'help' %}
 sec ACTION [OPTIONS]
 
 Send EPP commands to the New Zealand Shared Registry System.
@@ -52,7 +52,7 @@ The 'help' action will display this message.
 Run 'sec help ACTION' to see which options are available for that action. The options
 shown in the example command line are required.
 
-{% elif version %}
+{% elif help == 'version' %}
 sec version 0.4
 
 Copyright 2019 InternetNZ Inc.
@@ -83,19 +83,19 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-{% elif hello %}
+{% elif help == 'hello' %}
 Get server greeting.
 
 sec hello
 
-{% elif login %}
+{% elif help == 'login' %}
 Log into the server.
 
 sec login [OPTIONS]
 
   --new-password                   Change the password for client
 
-{% elif contact_create %}
+{% elif help == 'contact-create' %}
 Create a contact.
 
 sec contact-create --contact ID --name NAME --street1 TEXT --city TEXT --country --phone PHONE --email EMAIL [OPTIONS]
@@ -115,7 +115,7 @@ sec contact-create --contact ID --name NAME --street1 TEXT --city TEXT --country
 
   --transaction-id ID              Unique ID for this action
 
-{% elif contact_update %}
+{% elif help == 'contact-update' %}
 Update a contact.
 
 sec contact-update --contact ID [OPTIONS]
@@ -135,28 +135,28 @@ sec contact-update --contact ID [OPTIONS]
 
   --transaction-id ID              Unique ID for this action
   
-{% elif contact_delete %}
+{% elif help == 'contact-delete' %}
 Delete a contact.
 
 sec contact-delete --contact ID [OPTIONS]
 
   --contact ID                     ID of the contact
 
-{% elif contact_info %}
+{% elif help == 'contact-info' %}
 Get contact details.
 
 sec contact-info --contact ID [OPTIONS]
 
   --contact ID                     ID of the contact
 
-{% elif contact_check %}
+{% elif help == 'contact-check' %}
 Check if a contact exists.
 
 sec contact-check --contact ID [ID]* [OPTIONS]
 
   --contact ID [ID]*               ID of the contact
   
-{% elif domain_create %}
+{% elif help == 'domain-create' %}
 Create (register) a domain.
 
 sec domain-create --domain NAME --period NUMBER --registrant ID [OPTIONS]
@@ -179,7 +179,7 @@ sec domain-create --domain NAME --period NUMBER --registrant ID [OPTIONS]
 
   --transaction-id ID              Unique ID of this action
 
-{% elif domain_update %}
+{% elif help == 'domain-update' %}
 Update a domain.
 
 sec domain-update --domain NAME [OPTIONS]
@@ -211,7 +211,7 @@ sec domain-update --domain NAME [OPTIONS]
   --new-auth                       Request new domain password.
   --transaction-id ID              Unique ID for this action
 
-{% elif domain_delete %}
+{% elif help == 'domain-delete' %}
 Delete (cancel) a domain.
 
 sec domain-delete --domain NAME [OPTIONS]
@@ -219,7 +219,7 @@ sec domain-delete --domain NAME [OPTIONS]
   --domain NAME                    Name of the domain
   --transaction-id ID              Unique ID for this action
   
-{% elif domain_info %}
+{% elif help == 'domain-info' %}
 Get domain details.
 
 sec domain-info --domain NAME [OPTIONS]
@@ -227,14 +227,14 @@ sec domain-info --domain NAME [OPTIONS]
   --domain NAME                    Name of the domain
   --auth PASSWORD                  Password for the domain
 
-{% elif domain_check %}
+{% elif help == 'domain-check' %}
 Check if a domain exists.
 
 sec domain-check --domain NAME [NAME]* [OPTIONS]
 
   --domain NAME [NAME]*            Name of the domain
   
-{% elif domain_transfer %}
+{% elif help == 'domain-transfer' %}
 Transfer a domain.
 
 sec domain-transfer --domain NAME --auth AUTH [OPTIONS]
@@ -243,7 +243,7 @@ sec domain-transfer --domain NAME --auth AUTH [OPTIONS]
   --auth PASSWORD                  Password for the domain
   --transaction-id ID              Unique ID for this action
 
-{% elif domain_renew %}
+{% elif help == 'domain-renew' %}
 Renew a domain.
 
 sec domain-renew --domain NAME --period NUMBER --expires DATE [OPTIONS]
@@ -253,7 +253,7 @@ sec domain-renew --domain NAME --period NUMBER --expires DATE [OPTIONS]
   --expires DATE                   Current expiry date for domain
   --transaction-id ID              Unique ID for this action
 
-{% elif poll %}
+{% elif help == 'poll' %}
 Get or acknowledge messages.
 
 sec poll [OPTIONS]
@@ -261,7 +261,7 @@ sec poll [OPTIONS]
   --message-id ID                  ID of message being acknowleged
   --transaction-id ID              Unique ID for this action
 
-{% elif send_xml %}
+{% elif help == 'send-xml' %}
 Send a raw XML request, will use stdin if no input file is specified.
 
 sec send-xml [OPTIONS]

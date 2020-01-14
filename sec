@@ -125,9 +125,9 @@ def parse_arguments():
             argument = getopt.argument(False)
 
             if argument is not None:
-                action = re.sub(r'-', '_', argument)
+                action = argument
 
-        return 'help', {action: True}
+        return 'help', {'help': action}
 
     while True:
         option = getopt.option()
