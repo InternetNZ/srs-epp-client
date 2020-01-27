@@ -84,7 +84,7 @@ An example that gets the server greeting.
 
 ```sh
 sec hello
-  --server srstest.srs.net.nz
+  --server epp.test.srs.net.nz
   --certificate "./registrar-500.crt"
   --key "./registrar-500.key"
 ```
@@ -94,7 +94,7 @@ command.
 
 ```sh
 sec login
-  --server srstest.srs.net.nz
+  --server epp.test.srs.net.nz
   --username 500
   --password "test-password"
   --certificate "./registrar-500.crt"
@@ -106,7 +106,7 @@ than `hello`. The easiest method is to use `login`.
 
 ```sh
 sec login
-  --server srstest.srs.net.nz
+  --server epp.test.srs.net.nz
   --username 500
   --password "test-password"
   --new-password "new-test-password"
@@ -120,7 +120,7 @@ set using environment variables shown below.
 In this case the client certificate and key are contained in a single file.
 
 ```sh
-export EPP_SERVER="srstest.srs.net.nz"
+export EPP_SERVER="epp.test.srs.net.nz"
 export EPP_USERNAME="500"
 export EPP_PASSWORD="test-password"
 export EPP_CERTIFICATE="./registrar-500.pem"
