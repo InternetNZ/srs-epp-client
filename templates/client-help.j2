@@ -240,6 +240,7 @@ Transfer a domain.
 sec domain-transfer --domain NAME --auth AUTH [OPTIONS]
 
   --domain NAME                    Name of the domain
+  --period NUMBER                  Number of months to renew domain
   --auth PASSWORD                  Password for the domain
   --transaction-id ID              Unique ID for this action
 
@@ -249,7 +250,7 @@ Renew a domain.
 sec domain-renew --domain NAME --period NUMBER --expires DATE [OPTIONS]
 
   --domain NAME                    Name of the domain
-  --period NUMBER                  Number of months to register domain
+  --period NUMBER                  Number of months to renew domain
   --expires DATE                   Current expiry date for domain
   --transaction-id ID              Unique ID for this action
 

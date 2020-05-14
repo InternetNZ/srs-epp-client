@@ -3,6 +3,9 @@
     <transfer op="request">
       <domain:transfer xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>{{ domain_name }}</domain:name>
+        {% if period %}
+          <domain:period unit="m">{{ period }}</domain:period>
+        {% endif %}
         <domain:authInfo>
           <domain:pw>{{ auth_info }}</domain:pw>
         </domain:authInfo>
