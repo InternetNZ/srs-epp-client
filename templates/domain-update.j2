@@ -69,18 +69,6 @@
     {% if add_secdns_keys or remove_secdns_keys %}
       <extension>
         <secDNS:update xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1">
-          {% if add_secdns_keys %}
-            <secDNS:add>
-            {% for secdns_key in add_secdns_keys %}
-              <secDNS:dsData>
-                <secDNS:keyTag>{{ secdns_key.key_tag }}</secDNS:keyTag>
-                <secDNS:alg>{{ secdns_key.algorithm }}</secDNS:alg>
-                <secDNS:digestType>{{ secdns_key.digest_type }}</secDNS:digestType>
-                <secDNS:digest>{{ secdns_key.digest }}</secDNS:digest>
-              </secDNS:dsData>
-            {% endfor %}
-            </secDNS:add>
-          {% endif %}
           {% if remove_secdns_keys %}
             <secDNS:rem>
             {% for secdns_key in remove_secdns_keys %}
@@ -92,6 +80,18 @@
               </secDNS:dsData>
             {% endfor %}
             </secDNS:rem>
+          {% endif %}
+          {% if add_secdns_keys %}
+            <secDNS:add>
+            {% for secdns_key in add_secdns_keys %}
+              <secDNS:dsData>
+                <secDNS:keyTag>{{ secdns_key.key_tag }}</secDNS:keyTag>
+                <secDNS:alg>{{ secdns_key.algorithm }}</secDNS:alg>
+                <secDNS:digestType>{{ secdns_key.digest_type }}</secDNS:digestType>
+                <secDNS:digest>{{ secdns_key.digest }}</secDNS:digest>
+              </secDNS:dsData>
+            {% endfor %}
+            </secDNS:add>
           {% endif %}
         </secDNS:update>
       </extension>
