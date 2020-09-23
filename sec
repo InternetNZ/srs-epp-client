@@ -435,6 +435,9 @@ class EppClient:
             context.load_cert_chain(client_certificate, client_key, client_key_password or functools.partial(getpass, 'Enter password for ' + client_key + ': '))
         except EOFError:
             raise InternalError('No password specified')
+        except (PermissionError, FileNotFoundError, IsADirectoryError) as error:
+            # Filename is not included in the exception
+            raise InternalError('Unable to load certificate or key: {}'.format(error.strerror))
 
         if os.path.isdir(server_certificate):
             context.load_verify_locations(capath = server_certificate)
@@ -446,14 +449,13 @@ class EppClient:
 
         try:
             self.socket.connect((server_hostname, server_port))
-
         except ConnectionRefusedError as error:
             raise InternalError(error)
 
         except ssl.SSLError as error:
-            reason = re.sub(r'(?x) ^ \[SSL: \  [A-Z_]+ \] \  (.*) \  \(_ssl\.c:[0-9]+\) $', r'\1', error.strerror)
+            reason = re.sub(r'(?x) ^ \[ SSL: \  [A-Z0-9_]+ \] \  (.*) \  \(_ssl\.c:[0-9]+\) $', r'\1', error.strerror)
 
-            raise InternalError('SSL: ' + reason)
+            raise InternalError('SSL error: {}'.format(reason))
 
     def __del__(self):
         if self.socket is not None:
@@ -466,16 +468,22 @@ class EppClient:
         self.socket.write(request)
 
     def receive(self):
-        length = struct.unpack('>I', self.socket.read(4))[0]
+        try:
+            length = struct.unpack('>I', self.socket.read(4))[0]
 
-        if length <= 4:
-            raise InternalError('Invalid response length: {}'.format(length - 4))
+            if length <= 4:
+                raise InternalError('Invalid response length: {}'.format(length - 4))
 
-        length -= 4
-        response = b''
+            length -= 4
+            response = b''
 
-        while len(response) < length:
-            response += self.socket.read(length - len(response))
+            while len(response) < length:
+                response += self.socket.read(length - len(response))
+
+        except ssl.SSLError as error:
+            reason = re.sub(r'(?x) ^ \[ SSL: \  [A-Z0-9_]+ \] \  (.*) \  \(_ssl\.c:[0-9]+\) $', r'\1', error.strerror)
+
+            raise InternalError('SSL error: {}'.format(reason))
 
         xml_document = etree.fromstring(response)
 
@@ -552,7 +560,7 @@ def main():
                 try:
                     with open(arguments['file'], 'r') as file:
                         content = file.read()
-                except (PermissionError, FileNotFoundError) as error:
+                except (PermissionError, FileNotFoundError, IsADirectoryError) as error:
                     raise InternalError(error.strerror + ': ' + error.filename)
             else:
                 content = sys.stdin.read()
